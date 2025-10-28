@@ -1,0 +1,11 @@
+{
+  "total_transactions": 5,
+  "success_rate": 80.0,
+  "gateway_usage_rate": 0.0,
+  "avg_execution_time_ms": 12725.4,
+  "transactions_by_type": {
+    "initialize_escrow": 5
+  },
+  "total_volume_sol": 0.32000000000000006,
+  "last_updated": "2025-10-09T23:45:33.763753"
+}

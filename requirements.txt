@@ -1,0 +1,20 @@
+# AI Economy Protocol (AEP) - Dependencies
+
+# Stage 1: ASI Alliance Foundation
+uagents>=0.12.0
+uagents-core>=0.1.0
+
+# Utilities
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Stage 2: Sanctum Gateway Integration
+solana>=0.30.2
+solders>=0.18.1
+anchorpy>=0.18.0
+base58>=2.1.1
+httpx>=0.24.0
+websockets>=11.0
+
+# Stage 3: Arcium Encrypted Compute (to be added)
+# arcium-sdk (to be specified)

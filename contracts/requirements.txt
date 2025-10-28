@@ -1,0 +1,16 @@
+# Solana and Anchor dependencies for smart contract interaction
+solana>=0.36.6,<0.37
+solders>=0.26.0,<0.27
+anchorpy>=0.21.0,<0.22
+base58>=2.1.1
+
+# Async support
+aiohttp>=3.8.0
+
+# For Gateway integration (Phase 2.2)
+# httpx compatible with solana>=0.36.x
+httpx>=0.25.0,<1
+websockets>=11.0
+
+# Utilities
+python-dotenv>=1.0.0

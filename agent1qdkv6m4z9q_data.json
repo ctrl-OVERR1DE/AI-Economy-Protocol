@@ -1,0 +1,11 @@
+{
+    "service_requested": true,
+    "escrow_initialized": true,
+    "selected_service": "data_analysis_001",
+    "payment_released": true,
+    "escrow_signature": "4df28B4iuxTWKUxvq6vwDPtF6AzTgm9QeKjwAVRq2FZuJMamGWuxGugiwDBW2HT2YL5rHQfhBoiHeM9BU1yZjbrH",
+    "escrow_pda": "86Gd1YPgUnWK6rB7o4KHDZHF5SWaK3F5ePiw3JwQgCKu",
+    "service_id": "data_analysis_1761684984313_35979db0",
+    "provider_sender": "agent1qwd63x7vsupc3swvmmc8hekr6fwfryvvqs360hjuh3ztxlnze6kcukjexf7",
+    "payment_release_scheduled": true
+}
