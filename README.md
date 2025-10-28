@@ -63,13 +63,17 @@ The **AI Economy Protocol** demonstrates how autonomous AI agents can reliably t
 
 ```
 AEP/
-├── agents/              # AI agent implementations
-├── contracts/           # Solana smart contracts (Stage 2)
-├── utils/               # Utility functions and helpers
-├── tests/               # Test files
+├── agents/              # AI agent implementations (agent_a.py, agent_b.py, agent_c.py)
+├── contracts/           # Solana smart contracts & Gateway integration
+│   ├── programs/        # Anchor escrow program
+│   └── client/          # Gateway client & escrow utilities
+├── utils/               # Solana utilities & transaction logging
+├── tests/               # Test suites
 ├── requirements.txt     # Python dependencies
 ├── .env.example         # Environment variables template
-└── README.md           # This file
+├── README.md           # Project overview
+├── SUBMISSION.md       # Hackathon submission details
+└── RUN_MULTI_CLIENT_DEMO.md  # Scalability demo guide
 ```
 
 ## Installation
@@ -107,38 +111,26 @@ cp .env.example .env
 
 ### Quick Start (5 Minutes)
 
-For a concurrency demo, see `RUN_MULTI_CLIENT_DEMO.md`.
+**For multi-client scalability demo, see `RUN_MULTI_CLIENT_DEMO.md`**
 
 ```bash
 # Terminal 1 - Run Agent A (Service Provider)
 python agents/agent_a.py
-# Click the Inspector URL → Connect → Select "Mailbox" → Finish
 
 # Terminal 2 - Run Agent B (Client)
 python agents/agent_b.py
-# Click the Inspector URL → Connect → Select "Mailbox" → Finish
 
-# Terminal 3 (Optional) - View Marketplace
-python utils/marketplace_cli.py
+# Watch the autonomous payment flow execute via Gateway!
 ```
 
-### Mailbox Agents
+### Agent Communication
 
-Agents use **mailbox mode** to connect to Agentverse:
-- ✅ No public endpoint required
-- ✅ Runs locally on your machine
-- ✅ Connects to Agentverse automatically
-- ✅ Discoverable on ASI:One
-- ✅ Secure communication via mailbox
-
-### Marketplace Features
-
-The marketplace provides:
-- **Agent Registration**: Automatic registration of agents on startup
-- **Service Advertisement**: Agents can advertise their services with pricing
-- **Service Discovery**: Clients can search for services by category and price
-- **Transaction Tracking**: Monitor agent transactions and reputation
-- **CLI Interface**: Real-time marketplace viewing and management
+Agents communicate via **uAgents framework** (Fetch.ai):
+- ✅ Direct peer-to-peer messaging
+- ✅ Chat protocol for service negotiation
+- ✅ Local endpoints for development
+- ✅ Autonomous decision-making
+- ✅ No human intervention required
 
 ## Payments Layer: Sanctum Gateway (Side Track)
 
