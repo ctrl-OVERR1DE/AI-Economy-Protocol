@@ -10,9 +10,9 @@ import logging
 from datetime import datetime
 from uuid import uuid4
 
-# Configure logging - suppress verbose library logs
+# Suppress verbose logs for demo
 logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("uagents.registration").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -102,7 +102,7 @@ def create_end_session() -> ChatMessage:
 @chat_proto.on_message(ChatMessage)
 async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
     """Handle incoming chat messages from other agents."""
-    ctx.logger.info(f"Received message from {sender}")
+    # Received message
     
     # Always send back an acknowledgement when a message is received
     await ctx.send(
@@ -117,11 +117,11 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
     for item in msg.content:
         # Marks the start of a chat session
         if isinstance(item, StartSessionContent):
-            ctx.logger.info(f"Session started with {sender}")
+            pass  # Session started
         
         # Handles plain text messages (from another agent or ASI:One)
         elif isinstance(item, TextContent):
-            ctx.logger.info(f"Text message from {sender}: {item.text}")
+            # Processing response
             
             # Client logic - respond to service provider
             response_text = item.text.lower()
@@ -137,16 +137,16 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
             elif "service fee" in response_text or "0.1 sol" in response_text:
                 # Check if escrow already initialized
                 if ctx.storage.get("escrow_initialized"):
-                    ctx.logger.info("Escrow already initialized, skipping...")
+                    # Escrow already initialized
                     return
                 
                 # Initialize escrow before confirming service
-                ctx.logger.info("Initializing escrow for service payment...")
+                ctx.logger.info("🔒 Initializing escrow for service payment...")
                 
                 try:
                     # Load client's Solana wallet
                     client_wallet = load_agent_wallet("ClientAgent")
-                    ctx.logger.info(f"Client wallet loaded: {client_wallet.pubkey()}")
+                    # Client wallet loaded
                     
                     # Get provider's Solana address from storage (set during service discovery)
                     # For now, use a placeholder - in production, map agent address to Solana address
@@ -182,9 +182,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                     
                     # Check if escrow was reused
                     if signature == "ESCROW_ALREADY_EXISTS":
-                        ctx.logger.info(f"♻️  Reusing existing escrow!")
-                        ctx.logger.info(f"   Escrow PDA: {escrow_pda}")
-                        ctx.logger.info(f"   No transaction needed - escrow already active")
+                        ctx.logger.info(f"♻️  Reusing existing escrow: {escrow_pda}")
                     else:
                         ctx.logger.info(f"✅ Escrow initialized!")
                         ctx.logger.info(f"   Transaction: {signature}")
@@ -218,7 +216,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
             
             elif "analysis complete" in response_text and "proof" in response_text:
                 # Service completed - release payment from escrow
-                ctx.logger.info("Service completed! Releasing payment from escrow...")
+                ctx.logger.info("💸 Service completed! Releasing payment from escrow...")
                 
                 try:
                     # Load client wallet
@@ -270,24 +268,22 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                     await ctx.send(sender, error_msg)
                 
                 # End the session
-                ctx.logger.info("Service completed. Ending session.")
+                ctx.logger.info("✅ Service completed. Session ended.")
 
         # Marks the end of a chat session
         elif isinstance(item, EndSessionContent):
-            ctx.logger.info(f"Session ended with {sender}")
+            pass  # Session ended
         
         # Catches anything unexpected
         else:
-            ctx.logger.info(f"Received unexpected content type from {sender}")
+            pass  # Unexpected content
 
 
 # Handle acknowledgements for messages this agent has sent out
 @chat_proto.on_message(ChatAcknowledgement)
 async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
     """Handle acknowledgements from other agents."""
-    ctx.logger.info(
-        f"Received acknowledgement from {sender} for message {msg.acknowledged_msg_id}"
-    )
+    # Acknowledgement received
 
 
 # Periodic task to check and release payment (runs every 10 seconds)
@@ -344,39 +340,26 @@ async def discover_and_request_service(ctx: Context):
     global SERVICE_REQUESTED
     if SERVICE_REQUESTED or ctx.storage.get("service_requested"):
         return
-    ctx.logger.info("Discovering available services in marketplace...")
+    ctx.logger.info("🔍 Discovering available services...")
     # Search for data analysis services
     services = marketplace.search_services(category="Data Processing", max_price=0.15)
     if services:
-        ctx.logger.info(f"Found {len(services)} available services:")
-        for service in services:
-            ctx.logger.info(
-                f"  - {service.service_name}: {service.price_sol} SOL "
-                f"(Provider: {service.provider_name})"
-            )
-            
-            # Select the first service (in production, this would be more sophisticated)
-            selected_service = services[0]
-            ctx.logger.info(f"Selected service: {selected_service.service_name}")
-            
-            # Get provider address
-            provider_address = selected_service.provider_address
-            ctx.logger.info(f"Initiating service request to: {provider_address}")
-            
-            # Start a session with the provider
-            start_msg = create_start_session()
-            await ctx.send(provider_address, start_msg)
-            
-            # Mark as requested
-            ctx.storage.set("service_requested", True)
-            ctx.storage.set("selected_service", selected_service.service_id)
-            SERVICE_REQUESTED = True
-    else:
-        ctx.logger.info("No services found in marketplace yet.")
-        ctx.logger.info("Directly contacting Agent A (hardcoded address)...")
+        selected_service = services[0]
+        provider_address = selected_service.provider_address
+        ctx.logger.info(f"✅ Found service: {selected_service.service_name} ({selected_service.price_sol} SOL)")
+        ctx.logger.info(f"👋 Contacting provider: {provider_address}")
         
-        # Directly contact Agent A using hardcoded address
-        ctx.logger.info(f"Initiating service request to Agent A: {AGENT_A_ADDRESS}")
+        # Start a session with the provider
+        start_msg = create_start_session()
+        await ctx.send(provider_address, start_msg)
+        
+        # Mark as requested
+        ctx.storage.set("service_requested", True)
+        ctx.storage.set("selected_service", selected_service.service_id)
+        SERVICE_REQUESTED = True
+    else:
+        ctx.logger.info("⚠️  No services in marketplace")
+        ctx.logger.info(f"👋 Contacting Agent A directly: {AGENT_A_ADDRESS}")
         
         # Start a session with Agent A, then send the greeting after a short delay
         start_msg = create_start_session()
@@ -396,10 +379,11 @@ async def discover_and_request_service(ctx: Context):
 @agent.on_event("startup")
 async def startup(ctx: Context):
     """Log agent information on startup and register in marketplace."""
-    ctx.logger.info(f"Agent C (ClientAgentC) started")
-    ctx.logger.info(f"Agent address: {agent.address}")
-    ctx.logger.info(f"Agent name: {agent.name}")
-    ctx.logger.info(f"Listening on port: 5049")
+    ctx.logger.info("\n" + "="*70)
+    ctx.logger.info("💼 CLIENT AGENT C - Service Consumer (Multi-Client Demo)")
+    ctx.logger.info("="*70)
+    ctx.logger.info(f"Address: {agent.address}")
+    ctx.logger.info(f"Port: 5049")
     
     # Register agent profile in marketplace
     profile = AgentProfile(
@@ -408,15 +392,11 @@ async def startup(ctx: Context):
         agent_type="client",
     )
     
-    if marketplace.register_agent(profile):
-        ctx.logger.info("✓ Agent registered in marketplace as client")
-    else:
-        ctx.logger.info("Agent already registered in marketplace")
+    marketplace.register_agent(profile)
     
-    # Display marketplace stats
-    stats = marketplace.get_stats()
-    ctx.logger.info(f"Marketplace stats: {stats}")
-    ctx.logger.info("Ready to discover and request services!")
+    ctx.logger.info("✅ Ready to discover and request services")
+    ctx.logger.info("💰 Budget: 0.15 SOL max per service")
+    ctx.logger.info("="*70 + "\n")
     
     # Reset flags to ensure discovery runs on this startup
     global SERVICE_REQUESTED

@@ -53,8 +53,7 @@ class GatewayEscrowClient(EscrowClient):
         )
         
         if exists:
-            print(f"[Escrow] Reusing existing escrow PDA: {escrow_pda}")
-            print(f"[Escrow] Skipping initialization - escrow already active")
+            # Reusing existing escrow
             # Return a placeholder signature since no transaction was sent
             return ("ESCROW_ALREADY_EXISTS", False)
         
@@ -110,8 +109,7 @@ class GatewayEscrowClient(EscrowClient):
             build_resp = await self.gateway.build_gateway_transaction(
                 bytes(tx_initial), cluster=cluster, options=build_options
             )
-            # Gateway build successful
-            # Expect: { result: { transaction: base64, latestBlockhash: { ... } } }
+            # Gateway build successful (verbose response suppressed for demo)
             result = build_resp.get("result") if isinstance(build_resp, dict) else None
             if not isinstance(result, dict) or "transaction" not in result:
                 raise RuntimeError(f"Unexpected buildGatewayTransaction response: {build_resp}")
@@ -127,16 +125,17 @@ class GatewayEscrowClient(EscrowClient):
             send_resp = await self.gateway.send_transaction(bytes(tx_to_send), cluster=cluster)
             send_res = send_resp.get("result") if isinstance(send_resp, dict) else None
             if isinstance(send_res, str):
-                print(f"✅ Escrow initialized via Gateway")
+                print(f"✅ Gateway: Escrow initialized")
                 return (send_res, True)  # Gateway success
             if isinstance(send_res, dict):
                 sig = send_res.get("signature") or (send_res.get("signatures") or [None])[0]
                 if sig:
-                    print(f"✅ Escrow initialized via Gateway")
+                    print(f"✅ Gateway: Escrow initialized")
                     return (str(sig), True)  # Gateway success
             raise RuntimeError(f"Unexpected sendTransaction response: {send_resp}")
         except Exception as e:
-            print(f"⚠️  Gateway unavailable, using RPC fallback")
+            print(f"[Gateway] Gateway failed: {e}")
+            print(f"[Gateway] Falling back to RPC...")
 
         # Fallback: rebuild with fresh blockhash and send to RPC (skip_preflight to avoid blockhash expiry)
         from solana.rpc.types import TxOpts
@@ -148,9 +147,8 @@ class GatewayEscrowClient(EscrowClient):
             recent_blockhash=recent2.value.blockhash,
         )
         tx2 = VersionedTransaction(msg2, [self.wallet_keypair])
-        print(f"[RPC Fallback] Sending transaction with skip_preflight=True...")
         resp = await self.client.send_raw_transaction(bytes(tx2), opts=TxOpts(skip_preflight=True, max_retries=3))
-        print(f"[RPC Fallback] Transaction signature: {resp.value}")
+        print(f"✅ RPC: Escrow initialized")
         return (str(resp.value), False)  # RPC fallback used
 
     async def release_payment_via_gateway(
@@ -200,7 +198,7 @@ class GatewayEscrowClient(EscrowClient):
             build_resp = await self.gateway.build_gateway_transaction(
                 bytes(tx_initial), cluster=cluster, options={}
             )
-            # Gateway build successful
+            # Gateway build successful (verbose response suppressed for demo)
             result = build_resp.get("result") if isinstance(build_resp, dict) else None
             if not isinstance(result, dict) or "transaction" not in result:
                 raise RuntimeError(f"Unexpected buildGatewayTransaction response: {build_resp}")
@@ -213,16 +211,17 @@ class GatewayEscrowClient(EscrowClient):
             send_resp = await self.gateway.send_transaction(bytes(tx_to_send), cluster=cluster)
             send_res = send_resp.get("result") if isinstance(send_resp, dict) else None
             if isinstance(send_res, str):
-                print(f"✅ Payment released via Gateway")
+                print(f"✅ Gateway: Payment released")
                 return (send_res, True)
             if isinstance(send_res, dict):
                 sig = send_res.get("signature") or (send_res.get("signatures") or [None])[0]
                 if sig:
-                    print(f"✅ Payment released via Gateway")
+                    print(f"✅ Gateway: Payment released")
                     return (str(sig), True)
             raise RuntimeError(f"Unexpected sendTransaction response: {send_resp}")
         except Exception as e:
-            print(f"⚠️  Gateway unavailable, using RPC fallback")
+            print(f"[Gateway] Gateway failed: {e}")
+            print(f"[Gateway] Falling back to RPC...")
         
         # Fallback to RPC
         from solana.rpc.types import TxOpts
@@ -234,9 +233,8 @@ class GatewayEscrowClient(EscrowClient):
             recent_blockhash=recent.value.blockhash,
         )
         tx2 = VersionedTransaction(msg2, [self.wallet_keypair])
-        print(f"[RPC Fallback] Releasing payment with skip_preflight=True...")
         resp = await self.client.send_raw_transaction(bytes(tx2), opts=TxOpts(skip_preflight=True, max_retries=3))
-        print(f"[RPC Fallback] Payment released: {resp.value}")
+        print(f"✅ RPC: Payment released")
         return (str(resp.value), False)
     
     async def submit_proof(self, provider_pubkey: Pubkey, proof_data: str) -> str:
@@ -277,9 +275,7 @@ class GatewayEscrowClient(EscrowClient):
         )
         tx = VersionedTransaction(msg, [self.wallet_keypair])
         
-        print(f"[submit_proof] Sending transaction with skip_preflight=True...")
         resp = await self.client.send_raw_transaction(bytes(tx), opts=TxOpts(skip_preflight=True, max_retries=3))
-        print(f"[submit_proof] Transaction signature: {resp.value}")
         return str(resp.value)
 
     async def release_payment(self, client_pubkey: Pubkey, provider_pubkey: Pubkey) -> str:

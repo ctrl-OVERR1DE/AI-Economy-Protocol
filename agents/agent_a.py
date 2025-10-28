@@ -5,13 +5,14 @@ Provides data analysis services to other agents in the AI Economy Protocol.
 
 import sys
 import os
+import asyncio
 import logging
 from datetime import datetime
 from uuid import uuid4
 
-# Configure logging - suppress verbose library logs
+# Suppress verbose logs for demo
 logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("uagents.registration").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -68,7 +69,9 @@ def create_text_chat(text: str, end_session: bool = False) -> ChatMessage:
 @chat_proto.on_message(ChatMessage)
 async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
     """Handle incoming chat messages from other agents."""
-    # Silently acknowledge (reduce log noise)
+    # Received message from {sender}
+    
+    # Always send back an acknowledgement when a message is received
     await ctx.send(
         sender, 
         ChatAcknowledgement(
@@ -81,9 +84,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
     for item in msg.content:
         # Marks the start of a chat session
         if isinstance(item, StartSessionContent):
-            ctx.logger.info(f"\n{'='*60}")
-            ctx.logger.info(f"📞 New client session: {sender[:20]}...")
-            ctx.logger.info(f"{'='*60}")
+            ctx.logger.info(f"🤝 Session started with {sender}")
             
             # Send welcome message
             welcome_msg = create_text_chat(
@@ -95,8 +96,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         
         # Handles plain text messages (from another agent or ASI:One)
         elif isinstance(item, TextContent):
-            # Only log important messages, not every text
-            pass
+            # Processing message from {sender}
             
             # Simple service logic - analyze the request
             raw_text = item.text
@@ -112,20 +112,20 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                     m = re.search(r"escrow pda:\s*([1-9A-HJ-NP-Za-km-z]{32,48})", raw_text, re.IGNORECASE)
                     if m:
                         escrow_pda_str = m.group(1)
-                        ctx.logger.info(f"\n💰 Escrow confirmed: {escrow_pda_str}")
+                        ctx.logger.info(f"📋 Escrow PDA: {escrow_pda_str}")
                 except Exception:
                     pass
 
                 # Check if we already processed this escrow
                 if escrow_pda_str:
                     if ctx.storage.get("processed_escrow_pda") == escrow_pda_str:
-                        ctx.logger.info("Escrow already processed, skipping...")
+                        # Escrow already processed
                         return
                     ctx.storage.set("escrow_pda", escrow_pda_str)
                     ctx.storage.set("processed_escrow_pda", escrow_pda_str)
                 
                 # Perform the analysis
-                ctx.logger.info("🔬 Processing data analysis...")
+                ctx.logger.info("🔍 Processing data analysis request...")
                 analysis_result = {
                     "trend": "15% growth",
                     "correlation": 0.85,
@@ -135,7 +135,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                 # Submit proof of completion
                 try:
                     provider_wallet = load_agent_wallet("DataAnalystAgent")
-                    # Silently load wallet
+                    # Provider wallet loaded
                     # Ensure provider wallet matches configured PROVIDER_PUBLIC_KEY to avoid PDA drift
                     configured_provider = os.getenv("PROVIDER_PUBLIC_KEY")
                     if configured_provider and str(provider_wallet.pubkey()) != configured_provider:
@@ -160,10 +160,8 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                         # Create proof data (hash of analysis result)
                         import json
                         proof_data = json.dumps(analysis_result)
-                            
-                        ctx.logger.info("\n-------------------------")
-                        ctx.logger.info("📝 Submitting proof to escrow...")
-                        ctx.logger.info("-------------------------")
+                        
+                        ctx.logger.info("📤 Submitting proof to escrow...")
                         proof_signature = await submit_proof_for_task(
                             provider_wallet=provider_wallet,
                             escrow_pda=escrow_pda_str,
@@ -250,34 +248,32 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
 @chat_proto.on_message(ChatAcknowledgement)
 async def handle_acknowledgement(ctx: Context, sender: str, msg: ChatAcknowledgement):
     """Handle acknowledgements from other agents."""
-    # Silently handle acknowledgements (reduce log noise)
-    pass
+    # Acknowledgement received
 
 
 # Startup event - Register as provider in marketplace
 @agent.on_event("startup")
 async def startup(ctx: Context):
     """Log agent information on startup and register in marketplace."""
-    ctx.logger.info(f"\n{'='*60}")
-    ctx.logger.info(f"🤖 DataAnalystAgent (Provider) - ONLINE")
-    ctx.logger.info(f"{'='*60}")
-    ctx.logger.info(f"Address: {agent.address[:30]}...")
+    ctx.logger.info("\n" + "="*70)
+    ctx.logger.info("🤖 DATA ANALYST AGENT - Service Provider")
+    ctx.logger.info("="*70)
+    ctx.logger.info(f"Address: {agent.address}")
     ctx.logger.info(f"Port: 5051")
-    ctx.logger.info(f"Services: Data Analysis (0.1 SOL)")
-    ctx.logger.info(f"{'='*60}\n")
     
     # Reset processed escrow flag on startup to allow reprocessing
     ctx.storage.set("processed_escrow_pda", None)
     
-    # Silently register in marketplace (internal only)
+    # Register agent profile in marketplace
     profile = AgentProfile(
         agent_address=agent.address,
         agent_name=agent.name,
         agent_type="provider",
     )
+    
     marketplace.register_agent(profile)
     
-    # Silently register services
+    # Register services
     services = [
         ServiceListing(
             service_id="data_analysis_001",
@@ -286,12 +282,35 @@ async def startup(ctx: Context):
             price_sol=0.1,
             provider_address=agent.address,
             provider_name=agent.name,
+            category="Data Processing",
+        ),
+        ServiceListing(
+            service_id="data_processing_001",
+            service_name="Data Processing",
+            description="Clean, transform, and prepare data for analysis",
+            price_sol=0.05,
+            provider_address=agent.address,
+            provider_name=agent.name,
+            category="Data Processing",
+        ),
+        ServiceListing(
+            service_id="insights_generation_001",
+            service_name="Insights Generation",
+            description="Generate actionable insights from processed data",
+            price_sol=0.15,
+            provider_address=agent.address,
+            provider_name=agent.name,
             category="Analytics",
         ),
     ]
     
     for service in services:
         marketplace.register_service(service)
+    
+    ctx.logger.info("✅ Services: Data Analysis, Data Processing, Insights Generation")
+    ctx.logger.info("💰 Pricing: 0.1 SOL per analysis")
+    ctx.logger.info("⏳ Waiting for client requests...")
+    ctx.logger.info("="*70 + "\n")
 
 
 # Include the chat protocol and publish the manifest to Agentverse

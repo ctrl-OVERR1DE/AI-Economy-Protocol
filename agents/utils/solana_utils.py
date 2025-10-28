@@ -140,7 +140,6 @@ async def initialize_escrow_for_service(
         
         # Each unique escrow PDA has its own ATA
         escrow_token_account = get_associated_token_address(escrow_pda, mint)
-        # Silently calculate escrow ATA
         
         # Check if escrow ATA exists, create if not
         rpc_url = os.getenv("SOLANA_RPC_URL", "https://api.devnet.solana.com")
@@ -148,7 +147,6 @@ async def initialize_escrow_for_service(
         ata_info = await rpc.get_account_info(escrow_token_account)
         
         if ata_info.value is None:
-            print(f"💳 Creating escrow token account...")
             # Create the ATA
             create_ata_ix = create_associated_token_account(
                 payer=client_wallet.pubkey(),
@@ -168,11 +166,6 @@ async def initialize_escrow_for_service(
             )
             tx = VersionedTransaction(msg, [client_wallet])
             resp = await rpc.send_raw_transaction(bytes(tx), opts=TxOpts(skip_preflight=False))
-            # Silently created
-            pass
-        else:
-            # ATA exists, continue
-            pass
         
         await rpc.close()
     
@@ -191,7 +184,6 @@ async def initialize_escrow_for_service(
         
         # Check if escrow was reused (no transaction sent)
         if signature == "ESCROW_ALREADY_EXISTS":
-            print(f"♻️  Escrow already exists, reusing: {escrow_pda[:20]}...")
             await escrow_client.close()
             return signature, escrow_pda
         
@@ -340,7 +332,6 @@ async def release_payment_from_escrow(
     # Convert provider address to Pubkey and escrow PDA to Pubkey
     provider_pubkey = Pubkey.from_string(provider_address)
     escrow_pda_pk = Pubkey.from_string(escrow_pda)
-    # Silently use escrow PDA
     
     # Get provider token account
     if provider_token_account is None:
@@ -359,20 +350,6 @@ async def release_payment_from_escrow(
             raise ValueError("TEST_MINT not set in environment")
         mint = Pubkey.from_string(mint_str)
         escrow_token_account = get_associated_token_address(escrow_pda_pk, mint)
-        # Silently calculate ATA
-        
-        # Verify escrow ATA exists (should have been created during initialization)
-        rpc_url = os.getenv("SOLANA_RPC_URL", "https://api.devnet.solana.com")
-        rpc = AsyncClient(rpc_url)
-        ata_info = await rpc.get_account_info(escrow_token_account)
-        
-        if ata_info.value is None:
-            print(f"⚠️  Escrow not found - may need initialization")
-        else:
-            # ATA verified, continue
-            pass
-        
-        await rpc.close()
     
     try:
         # Release payment via Gateway (with RPC fallback)
