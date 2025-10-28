@@ -6,8 +6,13 @@ Demonstrates multi-client scalability - requests services concurrently with Agen
 import sys
 import os
 import asyncio
+import logging
 from datetime import datetime
 from uuid import uuid4
+
+# Configure logging - suppress verbose library logs
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("uagents.registration").setLevel(logging.WARNING)
 
 # Add parent directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -110,7 +110,7 @@ class GatewayEscrowClient(EscrowClient):
             build_resp = await self.gateway.build_gateway_transaction(
                 bytes(tx_initial), cluster=cluster, options=build_options
             )
-            print(f"[Gateway] buildGatewayTransaction response: {build_resp}")
+            # Gateway build successful
             # Expect: { result: { transaction: base64, latestBlockhash: { ... } } }
             result = build_resp.get("result") if isinstance(build_resp, dict) else None
             if not isinstance(result, dict) or "transaction" not in result:
@@ -125,20 +125,18 @@ class GatewayEscrowClient(EscrowClient):
 
             # Send via Gateway
             send_resp = await self.gateway.send_transaction(bytes(tx_to_send), cluster=cluster)
-            print(f"[Gateway] sendTransaction response: {send_resp}")
             send_res = send_resp.get("result") if isinstance(send_resp, dict) else None
             if isinstance(send_res, str):
-                print(f"[Gateway] Transaction sent successfully via Gateway!")
+                print(f"✅ Escrow initialized via Gateway")
                 return (send_res, True)  # Gateway success
             if isinstance(send_res, dict):
                 sig = send_res.get("signature") or (send_res.get("signatures") or [None])[0]
                 if sig:
-                    print(f"[Gateway] Transaction sent successfully via Gateway!")
+                    print(f"✅ Escrow initialized via Gateway")
                     return (str(sig), True)  # Gateway success
             raise RuntimeError(f"Unexpected sendTransaction response: {send_resp}")
         except Exception as e:
-            print(f"[Gateway] Gateway failed: {e}")
-            print(f"[Gateway] Falling back to RPC...")
+            print(f"⚠️  Gateway unavailable, using RPC fallback")
 
         # Fallback: rebuild with fresh blockhash and send to RPC (skip_preflight to avoid blockhash expiry)
         from solana.rpc.types import TxOpts
@@ -202,7 +200,7 @@ class GatewayEscrowClient(EscrowClient):
             build_resp = await self.gateway.build_gateway_transaction(
                 bytes(tx_initial), cluster=cluster, options={}
             )
-            print(f"[Gateway] buildGatewayTransaction response: {build_resp}")
+            # Gateway build successful
             result = build_resp.get("result") if isinstance(build_resp, dict) else None
             if not isinstance(result, dict) or "transaction" not in result:
                 raise RuntimeError(f"Unexpected buildGatewayTransaction response: {build_resp}")
@@ -213,20 +211,18 @@ class GatewayEscrowClient(EscrowClient):
             tx_to_send = VersionedTransaction(built_tx.message, [self.wallet_keypair])
             
             send_resp = await self.gateway.send_transaction(bytes(tx_to_send), cluster=cluster)
-            print(f"[Gateway] sendTransaction response: {send_resp}")
             send_res = send_resp.get("result") if isinstance(send_resp, dict) else None
             if isinstance(send_res, str):
-                print(f"[Gateway] Payment released via Gateway!")
+                print(f"✅ Payment released via Gateway")
                 return (send_res, True)
             if isinstance(send_res, dict):
                 sig = send_res.get("signature") or (send_res.get("signatures") or [None])[0]
                 if sig:
-                    print(f"[Gateway] Payment released via Gateway!")
+                    print(f"✅ Payment released via Gateway")
                     return (str(sig), True)
             raise RuntimeError(f"Unexpected sendTransaction response: {send_resp}")
         except Exception as e:
-            print(f"[Gateway] Gateway failed: {e}")
-            print(f"[Gateway] Falling back to RPC...")
+            print(f"⚠️  Gateway unavailable, using RPC fallback")
         
         # Fallback to RPC
         from solana.rpc.types import TxOpts
