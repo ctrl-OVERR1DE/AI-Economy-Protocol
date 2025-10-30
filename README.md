@@ -4,7 +4,8 @@
 ![tag:solana](https://img.shields.io/badge/Solana-14F195)
 ![tag:autonomous-agents](https://img.shields.io/badge/Autonomous_Agents-9945FF)
 
-> Hackathon Submission: Main Track + Sanctum Gateway Side Track
+> **Hackathon Submission:** Main Track + Sanctum Gateway Side Track  
+> 📋 **[View Full Submission Details →](SUBMISSION.md)**
 
 ## Overview
 
@@ -49,15 +50,25 @@ The **AI Economy Protocol** demonstrates how autonomous AI agents can reliably t
 
 ### Agent A: Data Analyst Agent
 - **Name**: DataAnalystAgent
-- **Address**: TBD (after Agentverse registration)
+- **Address**: `agent1qwd63x7vsupc3swvmmc8hekr6fwfryvvqs360hjuh3ztxlnze6kcukjexf7`
+- **Port**: 5051
 - **Role**: Service provider offering data analysis services
 - **Capabilities**: Data processing, analysis, and insights generation
+- **Pricing**: 0.1 SOL per analysis
 
 ### Agent B: Client Agent
 - **Name**: ClientAgent
-- **Address**: TBD (after Agentverse registration)
+- **Address**: `agent1qdkv6m4z9qgllndchyzpppqkv3zf285q4r22r7h6lthwc90n9236x5jnvj4`
+- **Port**: 5050
 - **Role**: Client requesting and consuming services
 - **Capabilities**: Service discovery, task requests, payment management
+- **Budget**: 0.15 SOL max per service
+
+### Agent C: Client Agent (Multi-Client Demo)
+- **Name**: ClientAgentC
+- **Port**: 5049
+- **Role**: Demonstrates multi-client scalability
+- **Purpose**: Shows concurrent agent transactions
 
 ## Project Structure
 
@@ -104,7 +115,13 @@ pip install -r requirements.txt
 4. Configure environment variables:
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your configuration:
+# - SOLANA_RPC_URL: Your Solana RPC endpoint (default: devnet)
+# - GATEWAY_API_KEY: Your Sanctum Gateway API key
+# - TEST_MINT: SPL token mint address for payments
+# - CLIENT_TOKEN_ACCOUNT: Client's token account
+# - PROVIDER_TOKEN_ACCOUNT: Provider's token account
+# - ESCROW_PROGRAM_ID: Deployed escrow program ID
 ```
 
 ## Usage
@@ -133,6 +150,8 @@ Agents communicate via **uAgents framework** (Fetch.ai):
 - ✅ No human intervention required
 
 ## Payments Layer: Sanctum Gateway (Side Track)
+
+> 📋 **For detailed Gateway integration analysis, see [SUBMISSION.md](SUBMISSION.md)**
 
 ### ✅ Complete Gateway API Implementation
 - **buildGatewayTransaction**: Optimizes transactions with compute units, priority fees, and fresh blockhash
@@ -205,23 +224,68 @@ python agents/agent_b.py
 ```
 
 ### Expected Output
+
+**Agent A (Provider):**
 ```
-[Gateway] buildGatewayTransaction response: {...}
-[Gateway] sendTransaction response: {'result': '<signature>'}
-[Gateway] Transaction sent successfully via Gateway!
-✅ Escrow initialized!
+======================================================================
+🤖 DATA ANALYST AGENT - Service Provider
+======================================================================
+Address: agent1qwd63x7vsupc3swvmmc8hekr6fwfryvvqs360hjuh3ztxlnze6kcukjexf7
+Port: 5051
+✅ Services: Data Analysis, Data Processing, Insights Generation
+💰 Pricing: 0.1 SOL per analysis
+⏳ Waiting for client requests...
+======================================================================
+
+🤝 Session started with client
+💬 Client requested service and pricing information
+💬 Client confirmed payment in escrow
+📋 Escrow PDA: 5K77scUZ...
+🔍 Processing data analysis request...
+📤 Submitting proof to escrow...
 ✅ Proof submitted!
-[Gateway] Payment released via Gateway!
+   Transaction: 5ABZnYye...
+💼 Ready to accept new service requests!
+```
+
+**Agent B (Client):**
+```
+======================================================================
+💼 CLIENT AGENT - Service Consumer
+======================================================================
+Address: agent1qdkv6m4z9qgllndchyzpppqkv3zf285q4r22r7h6lthwc90n9236x5jnvj4
+Port: 5050
+✅ Ready to discover and request services
+💰 Budget: 0.15 SOL max per service
+======================================================================
+
+🔍 Discovering available services...
+👋 Contacting Agent A directly: agent1qwd63x...
+💬 Provider introduced services
+💬 Sending: 'I need data analysis. What's your pricing?'
+💬 Provider quoted 0.1 SOL for service
+🔒 Initializing escrow for service payment...
+✅ Gateway: Escrow initialized
+✅ Escrow initialized!
+   Transaction: 5vknPbUf...
+   Escrow PDA: FnDpJ7xb...
+   Amount locked: 0.1 SOL
+💬 Provider completed analysis and submitted proof
+💸 Service completed! Releasing payment from escrow...
+✅ Gateway: Payment released
 ✅ Payment released!
+   Transaction: 4wGCDk76...
+✅ Service completed. Session ended.
 ```
 
 ## Technical Implementation
 
 ### Smart Contract (Anchor)
-- **Escrow Program**: `HgzpCVSzmSwveikHVTpt85jVXpcqnJWQNcZzFbnjMEz9`
+- **Escrow Program**: `HgzpCVSzmSwveikHVTpt85jVXpcqnJWQNcZzFbnjMEz9` (Solana Devnet)
 - **Task-Hash PDAs**: Unique escrow per task prevents reuse collisions
 - **State Machine**: Pending → ProofSubmitted → Completed
 - **Proof Verification**: SHA256 hash validation on-chain
+- **SPL Token Support**: Uses SPL tokens for payments (TEST_MINT: `8Pv3AGNmtRdFyzu93THwCFVURme2XvF1cYTubdP3iwGi`)
 
 ### Gateway Client (`gateway_escrow_client.py`)
 - Wraps Gateway JSON-RPC API
@@ -236,12 +300,32 @@ python agents/agent_b.py
 - ✅ Error handling and recovery
 - ✅ End-to-end agent flow
 
+## 📋 Hackathon Submission
+
+**For judges:** See **[SUBMISSION.md](SUBMISSION.md)** for:
+- ✅ Complete Gateway integration details
+- ✅ Why Gateway was essential for autonomous agents
+- ✅ Technical achievements and test results
+- ✅ Production-ready features demonstrated
+- ✅ Future roadmap and vision
+
+## Project Files
+
+- **[SUBMISSION.md](SUBMISSION.md)** - **Hackathon submission details and achievements** ⭐
+- **README.md** - This file (project overview)
+- **[RUN_MULTI_CLIENT_DEMO.md](RUN_MULTI_CLIENT_DEMO.md)** - Guide for running multi-client scalability demo
+- **TECHNICAL_DEMO_SCRIPT.md** - Script for recording technical demo video
+- **hack-pitch.md** - Pitch script for hackathon presentation
+- **slide-todo.md** - Slide deck structure and design notes
+
 ## Resources
 
 - [Sanctum Gateway Documentation](https://gateway.sanctum.so/docs)
 - [Sanctum Gateway Platform](https://gateway.sanctum.so/)
 - [Solana Devnet Explorer](https://explorer.solana.com/?cluster=devnet)
 - [Anchor Framework](https://www.anchor-lang.com/)
+- [uAgents Framework](https://fetch.ai/docs)
+- [Fetch.ai Innovation Lab](https://innovationlab.fetch.ai/)
 
 ## License
 

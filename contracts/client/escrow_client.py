@@ -141,7 +141,7 @@ class EscrowClient:
                 return (False, escrow_pda)
                 
         except Exception as e:
-            print(f"[Escrow] Error checking escrow: {e}")
+            # Escrow doesn't exist yet (expected for new escrows)
             return (False, escrow_pda)
     
     @staticmethod

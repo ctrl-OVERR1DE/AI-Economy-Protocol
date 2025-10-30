@@ -84,7 +84,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
     for item in msg.content:
         # Marks the start of a chat session
         if isinstance(item, StartSessionContent):
-            ctx.logger.info(f"🤝 Session started with {sender}")
+            ctx.logger.info(f"🤝 Session started with client")
             
             # Send welcome message
             welcome_msg = create_text_chat(
@@ -96,7 +96,9 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         
         # Handles plain text messages (from another agent or ASI:One)
         elif isinstance(item, TextContent):
-            # Processing message from {sender}
+            # Log key client messages only
+            if "pricing" in item.text.lower() and "need" in item.text.lower():
+                ctx.logger.info("💬 Client requested service and pricing information")
             
             # Simple service logic - analyze the request
             raw_text = item.text
@@ -125,6 +127,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                     ctx.storage.set("processed_escrow_pda", escrow_pda_str)
                 
                 # Perform the analysis
+                ctx.logger.info("💬 Client confirmed payment in escrow")
                 ctx.logger.info("🔍 Processing data analysis request...")
                 analysis_result = {
                     "trend": "15% growth",

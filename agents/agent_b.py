@@ -121,13 +121,18 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
         
         # Handles plain text messages (from another agent or ASI:One)
         elif isinstance(item, TextContent):
-            # Processing response
+            # Log key provider messages only (avoid duplicates)
+            if "hello" in item.text.lower() and "dataanalyst" in item.text.lower():
+                ctx.logger.info("💬 Provider introduced services")
+            elif "analysis complete" in item.text.lower() and "proof" in item.text.lower():
+                ctx.logger.info("💬 Provider completed analysis and submitted proof")
             
             # Client logic - respond to service provider
             response_text = item.text.lower()
             
             if "welcome" in response_text or "what service" in response_text:
                 # Request data analysis service
+                ctx.logger.info("💬 Sending: 'I need data analysis. What's your pricing?'")
                 request_msg = create_text_chat(
                     "I need data analysis for my dataset. "
                     "Can you provide pricing information?"
@@ -141,6 +146,7 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                     return
                 
                 # Initialize escrow before confirming service
+                ctx.logger.info("💬 Provider quoted 0.1 SOL for service")
                 ctx.logger.info("🔒 Initializing escrow for service payment...")
                 
                 try:
