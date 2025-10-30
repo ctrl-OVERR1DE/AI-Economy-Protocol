@@ -97,8 +97,8 @@ AEP/
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd AEP
+git clone https://github.com/ctrl-OVERR1DE/AI-Economy-Protocol.git
+cd AI-Economy-Protocol
 ```
 
 2. Create a virtual environment:
