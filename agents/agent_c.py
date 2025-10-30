@@ -1,6 +1,30 @@
 """
-Agent C: Client Agent (Third Client)
-Demonstrates multi-client scalability - requests services concurrently with Agent B.
+Agent C: Client Agent (Multi-Client Scalability Demo)
+
+This agent demonstrates multi-client scalability by requesting services concurrently
+with Agent B. It shows that the system can handle multiple autonomous clients
+transacting simultaneously without conflicts.
+
+Key Features:
+- Same capabilities as Agent B (service discovery, payment)
+- Runs on different port (5049) to avoid conflicts
+- Uses unique seed for separate identity
+- Demonstrates concurrent escrow operations
+
+Purpose:
+- Prove system can handle multiple concurrent clients
+- Show unique escrow PDAs prevent transaction collisions
+- Demonstrate Gateway's ability to handle parallel transactions
+- Validate scalability of autonomous payment infrastructure
+
+Technical Stack:
+- uAgents framework for agent communication
+- Solana blockchain for payment settlement
+- Anchor smart contracts for escrow management
+- Sanctum Gateway for transaction optimization
+
+Port: 5049
+Unique Seed: client_agent_c_seed_2025
 """
 
 import sys

@@ -1,6 +1,23 @@
 """
 Agent A: Data Analyst Agent (Service Provider)
-Provides data analysis services to other agents in the AI Economy Protocol.
+
+This agent provides data analysis services to other agents in the AI Economy Protocol.
+It demonstrates autonomous service provision with on-chain payment settlement.
+
+Key Features:
+- Advertises data analysis services in marketplace
+- Accepts service requests via uAgents Chat Protocol
+- Processes tasks and submits cryptographic proofs to escrow
+- Receives payments automatically after proof verification
+
+Technical Stack:
+- uAgents framework for agent communication
+- Solana blockchain for payment settlement
+- Anchor smart contracts for escrow management
+- Sanctum Gateway for transaction optimization
+
+Port: 5051
+Address: agent1qwd63x7vsupc3swvmmc8hekr6fwfryvvqs360hjuh3ztxlnze6kcukjexf7
 """
 
 import sys

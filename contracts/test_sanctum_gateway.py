@@ -65,8 +65,6 @@ async def test_gateway_full_flow():
     ))
     
     # Build UNSIGNED transaction with NULL blockhash
-    # Per docs: "Since buildGatewayTransaction will set the blockhash for you,
-    #            we can avoid fetching the latest blockhash here"
     print(f"\n[3/7] Building unsigned transaction with NULL blockhash")
     NULL_BLOCKHASH = Hash.from_string("11111111111111111111111111111111")
     

@@ -1,3 +1,27 @@
+"""
+Gateway Escrow Client
+
+Extends the base EscrowClient with Sanctum Gateway integration for optimized
+transaction delivery. This client handles escrow operations (initialize, release)
+with automatic Gateway optimization and RPC fallback.
+
+Key Features:
+- buildGatewayTransaction: Optimizes compute units, priority fees, fresh blockhash
+- sendTransaction: Dual-path routing (RPC + Jito bundles)
+- Automatic Jito refunds when RPC lands first
+- Graceful fallback to RPC when Gateway unavailable
+- Real-time transaction monitoring and logging
+
+Usage:
+    client = GatewayEscrowClient(wallet_keypair=keypair)
+    signature, used_gateway = await client.initialize_escrow_via_gateway(...)
+    
+Returns:
+    Tuple of (transaction_signature, used_gateway_bool)
+    - used_gateway=True: Transaction sent via Gateway
+    - used_gateway=False: Transaction sent via RPC fallback
+"""
+
 import os
 import struct
 import base64
@@ -16,7 +40,12 @@ from .gateway_client import GatewayClient
 
 
 class GatewayEscrowClient(EscrowClient):
-    """Escrow client with Sanctum Gateway integration."""
+    """
+    Escrow client with Sanctum Gateway integration.
+    
+    Provides optimized transaction delivery for escrow operations using
+    Sanctum Gateway's dual-path routing and automatic Jito refunds.
+    """
 
     def __init__(
         self,

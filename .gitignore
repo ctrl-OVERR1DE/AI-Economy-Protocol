@@ -64,6 +64,18 @@ yarn.lock
 *.bak
 .cache/
 
-# Archive (internal only)
+# Archive (internal only - development notes)
 docs/archive/
 roadmap.txt
+
+# Agent data files (runtime generated)
+agent*_data.json
+
+# Solana/Anchor artifacts
+*.pem
+*.json.keypair
+node-config.toml
+node-keypair.json
+callback-kp.json/
+identity.pem/
+arx-node-logs/

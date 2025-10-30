@@ -1,6 +1,31 @@
 """
-Agent B: Client Agent
-Requests and consumes services from other agents in the AI Economy Protocol.
+Agent B: Client Agent (Service Consumer)
+
+This agent requests and consumes services from other agents in the AI Economy Protocol.
+It demonstrates autonomous service discovery, negotiation, and payment execution.
+
+Key Features:
+- Discovers available services in marketplace
+- Negotiates pricing with service providers
+- Locks payments in escrow via Sanctum Gateway
+- Releases payments after service completion
+
+Payment Flow:
+1. Discover services (marketplace or direct contact)
+2. Request service and receive pricing quote
+3. Initialize escrow with payment lock (via Gateway)
+4. Wait for provider to complete task
+5. Release payment from escrow (via Gateway)
+
+Technical Stack:
+- uAgents framework for agent communication
+- Solana blockchain for payment settlement
+- Anchor smart contracts for escrow management
+- Sanctum Gateway for transaction optimization
+
+Port: 5050
+Address: agent1qdkv6m4z9qgllndchyzpppqkv3zf285q4r22r7h6lthwc90n9236x5jnvj4
+Budget: 0.15 SOL max per service
 """
 
 import sys
