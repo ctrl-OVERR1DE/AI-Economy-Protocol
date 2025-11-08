@@ -15,6 +15,12 @@ anchorpy>=0.18.0
 base58>=2.1.1
 httpx>=0.24.0
 websockets>=11.0
+# x402 Integration
+flask[async]>=3.0.0
+flask-cors>=4.0.0
+asgiref>=3.7.0
+nest-asyncio>=1.6.0
 
-# Stage 3: Arcium Encrypted Compute (to be added)
-# arcium-sdk (to be specified)
+# AI Integration (Gemini)
+google-generativeai>=0.3.0
+aiohttp>=3.9.0

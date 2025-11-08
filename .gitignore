@@ -40,6 +40,7 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
 # Testing
 .pytest_cache/
@@ -64,9 +65,19 @@ yarn.lock
 *.bak
 .cache/
 
-# Archive (internal only - development notes)
+# Internal development files (status docs, old scripts)
 docs/archive/
 roadmap.txt
+*-COMPLETE.md
+*-STATUS.md
+*-TODO.md
+*-PROGRESS-*.md
+*-READY.md
+QUICKSTART-*.md
+RUN-*.md
+start_*.bat
+run-*.bat
+*.sh
 
 # Agent data files (runtime generated)
 agent*_data.json

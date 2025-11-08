@@ -190,13 +190,37 @@ async def handle_message(ctx: Context, sender: str, msg: ChatMessage):
                         
                         ctx.logger.info(f"✅ Proof submitted!")
                         ctx.logger.info(f"   Transaction: {proof_signature}")
+                        
+                        # NEW: Claim payment via x402 Payment Gateway
+                        ctx.logger.info("💰 Claiming payment via x402 gateway...")
+                        from agents.utils.gateway_client import GatewayClient
+                        
+                        gateway = GatewayClient()
+                        provider_pubkey = str(provider_wallet.pubkey())
+                        
+                        payment_success, payment_data, payment_error = await gateway.claim_payment(
+                            escrow_pda=escrow_pda_str,
+                            provider_address=provider_pubkey,
+                            max_retries=3,
+                            retry_delay=5
+                        )
+                        
+                        if payment_success:
+                            ctx.logger.info(f"✅ Payment claimed successfully!")
+                            ctx.logger.info(f"   Amount: {payment_data.get('amount')} SOL")
+                            ctx.logger.info(f"   TX: {payment_data.get('tx_signature')}")
+                            payment_msg = f"Payment of {payment_data.get('amount')} SOL claimed (tx: {payment_data.get('tx_signature', '')[:16]}...)."
+                        else:
+                            ctx.logger.warning(f"⚠️  Payment claim pending: {payment_error}")
+                            payment_msg = "Payment claim in progress. Will be released after verification."
+                        
                         ctx.logger.info(f"💼 Ready to accept new service requests!")
                         
                         response_message = create_text_chat(
                             f"Analysis complete: Trend shows 15% growth, "
                             f"correlation coefficient: 0.85. "
                             f"Proof of completion submitted to escrow (tx: {proof_signature[:16]}...). "
-                            f"Payment can now be released."
+                            f"{payment_msg}"
                         )
                         
                         # Try to send with retry

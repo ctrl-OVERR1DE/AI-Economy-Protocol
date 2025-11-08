@@ -121,12 +121,17 @@ async def initialize_escrow_for_service(
         task_hash=task_hash,
     )
     
-    # Get client token account
+    # Get client token account - derive from wallet if not provided
     if client_token_account is None:
-        client_ata_str = os.getenv("CLIENT_TOKEN_ACCOUNT")
-        if not client_ata_str:
-            raise ValueError("CLIENT_TOKEN_ACCOUNT not set in environment")
-        client_token_account = Pubkey.from_string(client_ata_str)
+        from spl.token.instructions import get_associated_token_address
+        
+        mint_str = os.getenv("TEST_MINT")
+        if not mint_str:
+            raise ValueError("TEST_MINT not set in environment")
+        mint = Pubkey.from_string(mint_str)
+        
+        # Derive client's ATA for the token mint
+        client_token_account = get_associated_token_address(client_wallet.pubkey(), mint)
     
     # Calculate escrow token account dynamically based on escrow PDA
     if escrow_token_account is None:
@@ -299,6 +304,28 @@ def lamports_to_sol(lamports: int) -> float:
     return lamports / 1_000_000_000
 
 
+def tokens_to_smallest_unit(tokens: float, decimals: int = 6) -> int:
+    """
+    Convert tokens to smallest unit based on decimals.
+    
+    For SPL tokens with 6 decimals: 1 token = 1,000,000 smallest units
+    For SOL (9 decimals): 1 SOL = 1,000,000,000 lamports
+    
+    Args:
+        tokens: Number of tokens (e.g., 8.5)
+        decimals: Token decimals (default 6 for SPL tokens)
+    
+    Returns:
+        Amount in smallest unit (e.g., 8,500,000 for 8.5 tokens with 6 decimals)
+    """
+    return int(tokens * (10 ** decimals))
+
+
+def smallest_unit_to_tokens(amount: int, decimals: int = 6) -> float:
+    """Convert smallest unit to tokens based on decimals."""
+    return amount / (10 ** decimals)
+
+
 async def release_payment_from_escrow(
     client_wallet: Keypair,
     provider_address: str,
@@ -333,12 +360,17 @@ async def release_payment_from_escrow(
     provider_pubkey = Pubkey.from_string(provider_address)
     escrow_pda_pk = Pubkey.from_string(escrow_pda)
     
-    # Get provider token account
+    # Get provider token account - derive from provider address if not provided
     if provider_token_account is None:
-        provider_ata_str = os.getenv("PROVIDER_TOKEN_ACCOUNT")
-        if not provider_ata_str:
-            raise ValueError("PROVIDER_TOKEN_ACCOUNT not set in environment")
-        provider_token_account = Pubkey.from_string(provider_ata_str)
+        from spl.token.instructions import get_associated_token_address
+        
+        mint_str = os.getenv("TEST_MINT")
+        if not mint_str:
+            raise ValueError("TEST_MINT not set in environment")
+        mint = Pubkey.from_string(mint_str)
+        
+        # Derive provider's ATA for the token mint
+        provider_token_account = get_associated_token_address(provider_pubkey, mint)
     
     # Calculate escrow token account dynamically based on escrow PDA
     if escrow_token_account is None:

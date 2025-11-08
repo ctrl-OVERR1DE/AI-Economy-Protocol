@@ -1,331 +1,340 @@
 # AI Economy Protocol (AEP)
 
-![tag:sanctum](https://img.shields.io/badge/Sanctum_Gateway-FF6B6B)
+![tag:x402](https://img.shields.io/badge/x402_Gateway-FF6B6B)
 ![tag:solana](https://img.shields.io/badge/Solana-14F195)
 ![tag:autonomous-agents](https://img.shields.io/badge/Autonomous_Agents-9945FF)
 
-> **Hackathon Submission:** Main Track + Sanctum Gateway Side Track  
-> 📋 **[View Full Submission Details →](SUBMISSION.md)**
+> **x402 Hackathon Submission**
 
 ## Overview
 
-The **AI Economy Protocol** demonstrates how autonomous AI agents can reliably transact using **Sanctum Gateway's transaction optimization**. This project showcases a complete agent-to-agent payment system where agents autonomously negotiate, lock payments in escrow, verify task completion, and release funds—all optimized through Gateway's dual-path routing and observability features.
+The **AI Economy Protocol** is a complete autonomous AI agent marketplace with proof-gated payments via the **x402 Payment Gateway**. Agents discover services, negotiate pricing, lock payments in escrow, complete work, and claim payments—all enforced by HTTP 402 (Payment Required) until proof of work is verified on-chain.
 
-**Key Innovation:** Autonomous agents making trustless payments without human intervention, leveraging Gateway for maximum transaction reliability and cost efficiency.
+**Key Innovation:** World's first standalone x402 Payment Gateway with escrow-based trustless payments for autonomous agents.
+
+## Quick Start (5 Minutes)
+
+### Prerequisites
+- Python 3.10+
+- Node.js 18+ and npm
+- Solana CLI (for wallet setup)
+
+### 1. Install Dependencies
+```bash
+pip install -r requirements.txt
+cd dashboard/frontend && npm install && cd ../..
+```
+
+### 2. Configure Environment
+```bash
+cp .env.example .env
+cp dashboard/frontend/.env.local.example dashboard/frontend/.env.local
+# Edit .env with your Solana RPC, TEST_MINT, GEMINI_API_KEY
+```
+
+### 3. Start All Services
+```bash
+# Terminal 1: Marketplace API (port 8000)
+python start_marketplace.py
+
+# Terminal 2: x402 Payment Gateway (port 8001)
+python agents/x402/payment_gateway.py
+
+# Terminal 3: Provider Agents
+python agents/code_review_agent.py
+# (optional: start content_analyst_agent.py, translator_agent.py in more terminals)
+
+# Terminal 4: Dashboard (port 3000)
+cd dashboard/frontend && npm run dev
+
+# Terminal 5: Client Agent (drives end-to-end demo)
+python agents/agent_b.py
+```
+
+### 4. Verify
+- **Dashboard**: http://localhost:3000 (providers, jobs, stats, balances)
+- **Marketplace API**: http://localhost:8000/docs
+- **x402 Gateway**: http://localhost:8001/health
+
+### Notes
+- Payments use SPL Tokens (6 decimals) on Solana Devnet
+- See "Wallets & Tokens Setup" below for wallet creation and funding
+
+## Wallets & Tokens Setup
+
+Use this workflow to prepare wallets and Tokens (SPL, 6 decimals) for the demo.
+
+1) Create agent wallets
+```
+solana-keygen new --no-bip39-passphrase -o ~/.config/solana/clientagent_id.json
+solana-keygen new --no-bip39-passphrase -o ~/.config/solana/codereviewagent_id.json
+```
+
+2) Airdrop Devnet SOL (fees)
+```
+solana airdrop 2 -k ~/.config/solana/clientagent_id.json
+solana airdrop 2 -k ~/.config/solana/codereviewagent_id.json
+```
+
+3) Update env
+- In `.env`, set:
+  - `SOLANA_WALLET_PATH` to the client wallet path (for helper script minting)
+  - `PROVIDER_PUBLIC_KEY` to the CodeReviewAgent public key
+  - Optional: `HELIUS_RPC_URL` for reliable dashboard balances
+
+4) Create mint and credit 1,000 Tokens to the client (helper script)
+```
+python contracts/scripts/create_token_accounts.py
+```
+Paste printed values into `.env`:
+- `TEST_MINT=<printed mint>`
+- (Optional) `CLIENT_TOKEN_ACCOUNT`, `ESCROW_TOKEN_ACCOUNT` (auto-derived if omitted)
+
+5) Dashboard config
+- In `dashboard/frontend/.env.local`, set:
+```
+NEXT_PUBLIC_TOKEN_MINT=<same TEST_MINT>
+```
+
+Sanity check
+- `solana balance -k ~/.config/solana/clientagent_id.json` shows some SOL
+- `spl-token balance <TEST_MINT> --owner $(solana address -k ~/.config/solana/clientagent_id.json)` shows ~1000 Tokens
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    AUTONOMOUS AGENTS                        │
-│  Agent A (Provider) ←──────────→ Agent B (Client)          │
-│         ↓ Negotiate & Execute Tasks ↓                       │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   SANCTUM GATEWAY API                       │
-│  • buildGatewayTransaction (optimize & simulate)            │
-│  • sendTransaction (dual-path routing)                      │
-│  • Real-time monitoring & observability                     │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    SOLANA BLOCKCHAIN                        │
-│  • Escrow Smart Contract (Anchor)                           │
-│  • SPL Token Transfers                                      │
-│  • Program Derived Addresses (PDAs)                         │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│                         DASHBOARD (Next.js)                    │
+│                ←── fetches metrics from Marketplace API ──→   │
+└───────────────────────────────────────────────────────────────┘
+                 ↑                                      │
+                 │ HTTP                                 │
+┌─────────────────┴──────────────────────────────────────┘
+│                  MARKETPLACE API (FastAPI, :8000)      │
+│  • Providers register/status                           │
+│  • Service discovery, requests, reviews, stats         │
+│  • Balances via RPC/Helius                             │
+└─────────────────┬──────────────────────────────────────┘
+                  │ HTTP (register, discovery, stats)
+┌─────────────────┴────────────────────────────────────────────────────┐
+│                                AGENTS                                │
+│  Provider Agents (CodeReview, Content, Translator)  ⇆  Client Agent  │
+│  • uAgents P2P chat between agents                                    │
+│  • Negotiate service and pricing                                      │
+│  • Client initializes escrow (Gateway client)                          │
+│  • Provider submits proof, then claims via x402                        │
+└─────────────────┬────────────────────────────────────────────────────┘
+                  │ HTTP (init escrow, claim)
+┌─────────────────┴──────────────────────────────────────┐
+│                 x402 PAYMENT GATEWAY (:8001)           │
+│  • Verifies proof (paywall)                            │
+│  • Releases payment from escrow                        │
+│  • Uses Sanctum Gateway for optimized delivery         │
+└─────────────────┬──────────────────────────────────────┘
+                  │ on-chain
+┌─────────────────┴──────────────────────────────────────┐
+│                     SOLANA (Devnet)                    │
+│  • Anchor Escrow Program + SPL Token Mint              │
+│  • PDAs per task, ATA creation on demand               │
+└────────────────────────────────────────────────────────┘
 ```
 
 ### Technology Stack
 
 | Component              | Technology                 | Purpose                                                                                   |
 | ---------------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
-| **Transaction Layer**  | **Sanctum Gateway**        | Transaction optimization, dual-path routing, Jito bundle refunds, observability          |
+| **Dashboard**          | Next.js (React)            | UI that visualizes providers, jobs, stats via Marketplace API                             |
+| **Marketplace API**    | FastAPI                    | Provider registry, service discovery, requests, reviews, stats, balances                  |
+| **Payment Gateway**    | x402 (Flask)               | Proof-gated payment claims and escrow release via HTTP                                    |
+| **Transaction Layer**  | Sanctum Gateway            | Transaction optimization, dual-path routing, Jito bundle refunds, observability           |
 | **Blockchain**         | Solana (Devnet)            | High-speed, low-cost settlement layer for agent payments                                  |
 | **Smart Contracts**    | Anchor Framework           | Escrow logic with task-based PDAs and proof verification                                  |
 | **Agent Framework**    | uAgents (Fetch.ai)         | Autonomous agent logic and peer-to-peer communication                                     |
 
 ## Agents
 
-### Agent A: Data Analyst Agent
-- **Name**: DataAnalystAgent
-- **Address**: `agent1qwd63x7vsupc3swvmmc8hekr6fwfryvvqs360hjuh3ztxlnze6kcukjexf7`
-- **Port**: 5051
-- **Role**: Service provider offering data analysis services
-- **Capabilities**: Data processing, analysis, and insights generation
-- **Pricing**: 0.1 SOL per analysis
+### Provider Agents
 
-### Agent B: Client Agent
-- **Name**: ClientAgent
-- **Address**: `agent1qdkv6m4z9qgllndchyzpppqkv3zf285q4r22r7h6lthwc90n9236x5jnvj4`
-- **Port**: 5050
-- **Role**: Client requesting and consuming services
-- **Capabilities**: Service discovery, task requests, payment management
-- **Budget**: 0.15 SOL max per service
+**Code Review Agent** (port 5052)
+- AI-powered code analysis with Gemini
+- Quality scoring, security checks, best practices
+- Base price: 8 Tokens
 
-### Agent C: Client Agent (Multi-Client Demo)
-- **Name**: ClientAgentC
-- **Port**: 5049
-- **Role**: Demonstrates multi-client scalability
-- **Purpose**: Shows concurrent agent transactions
+**Content Analyst Agent** (port 5053)
+- Content analysis with sentiment and insights
+- Base price: 5 Tokens
+
+**Translator Agent** (port 5054)
+- AI translation with context preservation
+- Base price: 3 Tokens
+
+### Client Agent (port 5050)
+- Discovers services via Marketplace API
+- AI-powered service selection (Gemini)
+- Initializes escrow and drives payment flow
+- Budget: 1000 Tokens
 
 ## Project Structure
 
 ```
 AEP/
-├── agents/              # AI agent implementations (agent_a.py, agent_b.py, agent_c.py)
-├── contracts/           # Solana smart contracts & Gateway integration
-│   ├── programs/        # Anchor escrow program
-│   └── client/          # Gateway client & escrow utilities
-├── utils/               # Solana utilities & transaction logging
-├── tests/               # Test suites
-├── requirements.txt     # Python dependencies
-├── .env.example         # Environment variables template
-├── README.md           # Project overview
-├── SUBMISSION.md       # Hackathon submission details
-└── RUN_MULTI_CLIENT_DEMO.md  # Scalability demo guide
+├── agents/                      # Autonomous AI agents
+│   ├── code_review_agent.py     # Provider: AI code review
+│   ├── content_analyst_agent.py # Provider: Content analysis
+│   ├── translator_agent.py      # Provider: Translation
+│   ├── agent_b.py               # Client: Service consumer
+│   ├── x402/                    # x402 Payment Gateway
+│   │   ├── payment_gateway.py   # Main gateway server (Flask)
+│   │   ├── proof_verifier.py    # On-chain proof verification
+│   │   └── payment_handler.py   # Escrow payment release
+│   ├── services/                # AI service implementations
+│   │   ├── code_reviewer.py     # Gemini-powered code review
+│   │   ├── content_analyzer.py  # Content analysis service
+│   │   └── translator.py        # Translation service
+│   └── utils/
+│       ├── gateway_client.py    # x402 client for agents
+│       └── solana_utils.py      # Escrow & wallet utilities
+├── marketplace/                 # Marketplace API (FastAPI)
+│   ├── api.py                   # REST endpoints
+│   ├── service.py               # Business logic
+│   └── data/                    # JSON data store
+├── dashboard/frontend/          # Next.js dashboard
+│   ├── app/                     # App router pages
+│   └── lib/                     # API client
+├── contracts/                   # Solana escrow program
+│   ├── programs/escrow/         # Anchor smart contract
+│   └── scripts/                 # Token setup helpers
+└── requirements.txt             # Python dependencies
 ```
 
-## Installation
+## How It Works
 
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
+### 1. Service Discovery
+- Providers register with Marketplace API on startup
+- Client queries Marketplace for available services
+- AI (Gemini) selects best service based on requirements
 
-### Setup
+### 2. Negotiation (uAgents P2P)
+- Client contacts provider via uAgents chat protocol
+- Provider quotes price and capabilities
+- Client confirms and proceeds to payment
 
-1. Clone the repository:
-```bash
-git clone https://github.com/ctrl-OVERR1DE/AI-Economy-Protocol.git
-cd AI-Economy-Protocol
+### 3. Escrow Initialization
+- Client locks Tokens in Solana escrow (Anchor program)
+- Escrow PDA derived from task hash (unique per job)
+- Associated Token Accounts created automatically
+
+### 4. Service Delivery
+- Provider performs work (AI code review, translation, etc.)
+- Provider submits proof of work to escrow on-chain
+- Proof includes SHA256 hash of input/output
+
+### 5. Payment via x402 Gateway
+- Provider calls `/claim-payment` on x402 gateway
+- Gateway verifies proof exists on-chain
+- **If no proof**: Returns HTTP 402 (Payment Required)
+- **If proof valid**: Releases payment from escrow to provider
+- Provider retries automatically on 402 until proof verified
+
+## x402 Payment Gateway
+
+### What is x402?
+HTTP 402 (Payment Required) is a standard status code that was reserved for future digital payment systems. We've implemented the **first production x402 gateway** for autonomous agent payments.
+
+### How It Works
+```
+Provider Agent              x402 Gateway              Solana Escrow
+      │                          │                          │
+      ├─ Complete work           │                          │
+      ├─ Submit proof ───────────┼─────────────────────────>│
+      ├─ /claim-payment ────────>│                          │
+      │                          ├─ Verify proof on-chain ─>│
+      │                          │                          │
+      │<─ 402 (no proof) ────────┤  OR                      │
+      │                          │                          │
+      │                          ├─ Release payment ────────>│
+      │<─ 200 (success) ─────────┤                          │
 ```
 
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+### Key Features
+- **Proof-Gated Payments**: HTTP 402 enforces proof submission before payment
+- **Automatic Retry**: Agents retry on 402 until proof verified
+- **On-Chain Verification**: All proofs verified via Solana RPC
+- **Escrow-Based**: Trustless payments with Anchor smart contract
+- **Multi-Agent**: One gateway serves unlimited agents
+- **Production-Ready**: Clean microservice architecture
+
+### API Endpoints
+
+**POST /claim-payment**
+- Verifies proof exists on-chain for escrow PDA
+- Returns 402 if proof not found
+- Releases payment and returns 200 if verified
+
+**GET /health**
+- Gateway health check
+
+### Integration
+Agents use `GatewayClient` to interact with x402:
+```python
+gateway = GatewayClient()
+success, data, error = await gateway.claim_payment(
+    escrow_pda=escrow_pda,
+    provider_solana_address=provider_address,
+    max_retries=3
+)
 ```
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+## Demo Flow
 
-4. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your configuration:
-# - SOLANA_RPC_URL: Your Solana RPC endpoint (default: devnet)
-# - GATEWAY_API_KEY: Your Sanctum Gateway API key
-# - TEST_MINT: SPL token mint address for payments
-# - CLIENT_TOKEN_ACCOUNT: Client's token account
-# - PROVIDER_TOKEN_ACCOUNT: Provider's token account
-# - ESCROW_PROGRAM_ID: Deployed escrow program ID
-```
+### What You'll See
 
-## Usage
+1. **Marketplace API** starts and serves provider registry
+2. **x402 Gateway** starts on port 8001
+3. **Provider agents** register with marketplace
+4. **Dashboard** displays live provider stats
+5. **Client agent** discovers services via AI
+6. **Client** initializes escrow with 8 Tokens
+7. **Provider** performs AI code review
+8. **Provider** submits proof to Solana escrow
+9. **Provider** claims payment via x402 (may see 402 retries)
+10. **x402** verifies proof and releases payment
+11. **Dashboard** updates with completed job stats
 
-### Quick Start (5 Minutes)
+## Technical Details
 
-**For multi-client scalability demo, see `RUN_MULTI_CLIENT_DEMO.md`**
-
-```bash
-# Terminal 1 - Run Agent A (Service Provider)
-python agents/agent_a.py
-
-# Terminal 2 - Run Agent B (Client)
-python agents/agent_b.py
-
-# Watch the autonomous payment flow execute via Gateway!
-```
-
-### Agent Communication
-
-Agents communicate via **uAgents framework** (Fetch.ai):
-- ✅ Direct peer-to-peer messaging
-- ✅ Chat protocol for service negotiation
-- ✅ Local endpoints for development
-- ✅ Autonomous decision-making
-- ✅ No human intervention required
-
-## Payments Layer: Sanctum Gateway (Side Track)
-
-> 📋 **For detailed Gateway integration analysis, see [SUBMISSION.md](SUBMISSION.md)**
-
-### ✅ Complete Gateway API Implementation
-- **buildGatewayTransaction**: Optimizes transactions with compute units, priority fees, and fresh blockhash
-- **sendTransaction**: Delivers via multiple methods (RPC + Jito bundles) with automatic refunds
-- **Dual-Path Routing**: Primary Gateway delivery with RPC fallback for maximum reliability
-- **Real-Time Monitoring**: Transaction logging with routing decisions and success metrics
-
-### ✅ Production-Ready Features
-- **100% Transaction Success Rate**: 8/8 comprehensive tests passed
-- **Unique Escrow PDAs**: Task-hash based derivation prevents collisions
-- **Status-Aware Reuse Prevention**: Checks escrow state before operations
-- **Automatic ATA Creation**: Creates token accounts on-demand
-- **Error Recovery**: Graceful fallback to RPC when Gateway unavailable
-
-### ✅ Autonomous Agent Payment Flow
-1. **Agent B** requests service from **Agent A**
-2. **Agent B** locks 0.1 SOL in escrow via **Gateway** (optimized transaction)
-3. **Agent A** completes task and submits proof to escrow
-4. **Agent B** releases payment via **Gateway** (dual-path routing)
-5. Both agents receive confirmation with transaction signatures
-
-**All without human intervention** ✨
-
-## Why Sanctum Gateway?
-
-### The Challenge
-Autonomous agents need **guaranteed payment delivery** without human intervention. Traditional RPC endpoints have:
-- ❌ Transaction failures requiring manual retries
-- ❌ No optimization for compute units or priority fees
-- ❌ Limited observability into transaction routing
-- ❌ Wasted fees on failed Jito bundles
-
-### The Solution: Sanctum Gateway
-Our implementation leverages Gateway's key features:
-
-✅ **Dual-Path Routing**
-- Sends transactions via RPC + Jito bundles simultaneously
-- If RPC lands first, Jito tip is automatically refunded
-- Maximizes landing probability for autonomous payments
-
-✅ **Transaction Optimization**
-- Automatic compute unit calculation
-- Dynamic priority fee adjustment
-- Fresh blockhash management
-- Pre-flight simulation to catch errors
-
-✅ **Observability & Monitoring**
-- Real-time transaction tracking
-- Routing decision logging
-- Success/failure metrics
-- Error diagnostics for debugging
-
-✅ **Cost Efficiency**
-- Only 0.0001 SOL per transaction
-- Refunds on failed Jito bundles
-- Optimized compute units reduce fees
-- Perfect for high-frequency agent micropayments
-
-## Live Demo
-
-### Quick Start
-```bash
-# Terminal 1 - Start Provider Agent
-python agents/agent_a.py
-
-# Terminal 2 - Start Client Agent (initiates payment flow)
-python agents/agent_b.py
-
-# Watch the full autonomous payment flow execute via Gateway!
-```
-
-### Expected Output
-
-**Agent A (Provider):**
-```
-======================================================================
-🤖 DATA ANALYST AGENT - Service Provider
-======================================================================
-Address: agent1qwd63x7vsupc3swvmmc8hekr6fwfryvvqs360hjuh3ztxlnze6kcukjexf7
-Port: 5051
-✅ Services: Data Analysis, Data Processing, Insights Generation
-💰 Pricing: 0.1 SOL per analysis
-⏳ Waiting for client requests...
-======================================================================
-
-🤝 Session started with client
-💬 Client requested service and pricing information
-💬 Client confirmed payment in escrow
-📋 Escrow PDA: 5K77scUZ...
-🔍 Processing data analysis request...
-📤 Submitting proof to escrow...
-✅ Proof submitted!
-   Transaction: 5ABZnYye...
-💼 Ready to accept new service requests!
-```
-
-**Agent B (Client):**
-```
-======================================================================
-💼 CLIENT AGENT - Service Consumer
-======================================================================
-Address: agent1qdkv6m4z9qgllndchyzpppqkv3zf285q4r22r7h6lthwc90n9236x5jnvj4
-Port: 5050
-✅ Ready to discover and request services
-💰 Budget: 0.15 SOL max per service
-======================================================================
-
-🔍 Discovering available services...
-👋 Contacting Agent A directly: agent1qwd63x...
-💬 Provider introduced services
-💬 Sending: 'I need data analysis. What's your pricing?'
-💬 Provider quoted 0.1 SOL for service
-🔒 Initializing escrow for service payment...
-✅ Gateway: Escrow initialized
-✅ Escrow initialized!
-   Transaction: 5vknPbUf...
-   Escrow PDA: FnDpJ7xb...
-   Amount locked: 0.1 SOL
-💬 Provider completed analysis and submitted proof
-💸 Service completed! Releasing payment from escrow...
-✅ Gateway: Payment released
-✅ Payment released!
-   Transaction: 4wGCDk76...
-✅ Service completed. Session ended.
-```
-
-## Technical Implementation
-
-### Smart Contract (Anchor)
-- **Escrow Program**: `HgzpCVSzmSwveikHVTpt85jVXpcqnJWQNcZzFbnjMEz9` (Solana Devnet)
-- **Task-Hash PDAs**: Unique escrow per task prevents reuse collisions
+### Solana Escrow (Anchor)
+- **Program ID**: `HgzpCVSzmSwveikHVTpt85jVXpcqnJWQNcZzFbnjMEz9` (Devnet)
+- **PDA Derivation**: Task-hash based (unique per job)
 - **State Machine**: Pending → ProofSubmitted → Completed
-- **Proof Verification**: SHA256 hash validation on-chain
-- **SPL Token Support**: Uses SPL tokens for payments (TEST_MINT: `8Pv3AGNmtRdFyzu93THwCFVURme2XvF1cYTubdP3iwGi`)
+- **Token Standard**: SPL tokens with 6 decimals
+- **ATA Creation**: Automatic on-demand for client, escrow, provider
 
-### Gateway Client (`gateway_escrow_client.py`)
-- Wraps Gateway JSON-RPC API
-- Handles transaction serialization and signing
-- Implements fallback logic for reliability
-- Logs all routing decisions and outcomes
+### x402 Gateway (Flask)
+- **Port**: 8001
+- **Proof Verification**: Queries Solana RPC for escrow account state
+- **Payment Release**: Calls Anchor program to transfer from escrow to provider
+- **Retry Logic**: Agents automatically retry on 402 response
+- **Logging**: All payment claims logged with status
 
-### Test Coverage
-- ✅ Escrow initialization via Gateway
-- ✅ Proof submission with PDA validation
-- ✅ Payment release with status checks
-- ✅ Error handling and recovery
-- ✅ End-to-end agent flow
+### Marketplace API (FastAPI)
+- **Port**: 8000
+- **Endpoints**: Provider registration, service discovery, stats, reviews
+- **Data Store**: JSON files (providers.json, requests.json, stats.json)
+- **Balances**: Fetches SPL token balances via Helius RPC
 
-## 📋 Hackathon Submission
-
-**For judges:** See **[SUBMISSION.md](SUBMISSION.md)** for:
-- ✅ Complete Gateway integration details
-- ✅ Why Gateway was essential for autonomous agents
-- ✅ Technical achievements and test results
-- ✅ Production-ready features demonstrated
-- ✅ Future roadmap and vision
-
-## Project Files
-
-- **[SUBMISSION.md](SUBMISSION.md)** - **Hackathon submission details and achievements** ⭐
-- **README.md** - This file (project overview)
-- **[RUN_MULTI_CLIENT_DEMO.md](RUN_MULTI_CLIENT_DEMO.md)** - Guide for running multi-client scalability demo
-- **TECHNICAL_DEMO_SCRIPT.md** - Script for recording technical demo video
-- **hack-pitch.md** - Pitch script for hackathon presentation
-- **slide-todo.md** - Slide deck structure and design notes
+### Dashboard (Next.js)
+- **Port**: 3000
+- **Features**: Live provider list, job history, marketplace stats, token balances
+- **API Client**: Fetches from Marketplace API
+- **Styling**: TailwindCSS + shadcn/ui components
 
 ## Resources
 
-- [Sanctum Gateway Documentation](https://gateway.sanctum.so/docs)
-- [Sanctum Gateway Platform](https://gateway.sanctum.so/)
 - [Solana Devnet Explorer](https://explorer.solana.com/?cluster=devnet)
 - [Anchor Framework](https://www.anchor-lang.com/)
 - [uAgents Framework](https://fetch.ai/docs)
-- [Fetch.ai Innovation Lab](https://innovationlab.fetch.ai/)
+- [x402 Payment Required Spec](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/402)
 
 ## License
 

@@ -1,0 +1,101 @@
+{
+  "agent1qw6f033x0pmyjks3wlwd2akfpnc8nrvem77z89f0k46n23r54e73wqx6kap": {
+    "agent_address": "agent1qw6f033x0pmyjks3wlwd2akfpnc8nrvem77z89f0k46n23r54e73wqx6kap",
+    "agent_name": "CodeReviewAgent",
+    "solana_address": "WwpPEyzoPGMUUARWQqBZ1Ls6rzs5rThiXaMwz1cmFpg",
+    "port": 5052,
+    "endpoint": "http://localhost:5052/submit",
+    "services": [
+      {
+        "service_type": "code_review",
+        "base_price": 8,
+        "description": "AI-powered code review with Gemini",
+        "features": [
+          "AI-powered code analysis",
+          "Quality scoring (1-10)",
+          "Security vulnerability detection",
+          "Best practices suggestions",
+          "Issue identification with severity"
+        ],
+        "avg_completion_time": 30,
+        "success_rate": 1.0
+      }
+    ],
+    "status": "offline",
+    "last_seen": "2025-11-08T19:51:33.632100",
+    "total_jobs": 1,
+    "completed_jobs": 1,
+    "failed_jobs": 0,
+    "total_earned": 8.0,
+    "rating": 5.0,
+    "review_count": 0,
+    "created_at": "2025-11-07T18:04:08.485756",
+    "updated_at": "2025-11-08T19:51:33.632100"
+  },
+  "agent1qt65q6sdgv9euw8vsmjsy4jzuj0e7s4a988cvm5j0mmazfqkgtl2vd6y4d7": {
+    "agent_address": "agent1qt65q6sdgv9euw8vsmjsy4jzuj0e7s4a988cvm5j0mmazfqkgtl2vd6y4d7",
+    "agent_name": "ContentAnalystAgent",
+    "solana_address": "5aUtTXEG7cF7uJoTt9duGFy5scZFfELnUef6skDwnwkS",
+    "port": 5051,
+    "endpoint": "http://localhost:5051/submit",
+    "services": [
+      {
+        "service_type": "content_analysis",
+        "base_price": 5,
+        "description": "AI-powered content analysis with Gemini",
+        "features": [
+          "AI-powered content analysis",
+          "Summary generation",
+          "Topic extraction",
+          "Sentiment analysis",
+          "Key points identification"
+        ],
+        "avg_completion_time": 25,
+        "success_rate": 1.0
+      }
+    ],
+    "status": "offline",
+    "last_seen": "2025-11-08T19:54:10.421600",
+    "total_jobs": 1,
+    "completed_jobs": 1,
+    "failed_jobs": 0,
+    "total_earned": 8.0,
+    "rating": 5.0,
+    "review_count": 0,
+    "created_at": "2025-11-07T18:59:31.757939",
+    "updated_at": "2025-11-08T19:54:10.421600"
+  },
+  "agent1qvprlmqun5keeps0l7m8lj8qpm67fqeum03rys0vapeau8jdkys8svtzhly": {
+    "agent_address": "agent1qvprlmqun5keeps0l7m8lj8qpm67fqeum03rys0vapeau8jdkys8svtzhly",
+    "agent_name": "TranslatorAgent",
+    "solana_address": "HLDghhQFDbAkAk73WUPH7nvHU24v6ExETwBKnhG1wPwV",
+    "port": 5053,
+    "endpoint": "http://localhost:5053/submit",
+    "services": [
+      {
+        "service_type": "translation",
+        "base_price": 3,
+        "description": "AI-powered translation with Gemini",
+        "features": [
+          "AI-powered translation",
+          "Multi-language support",
+          "Confidence scoring",
+          "Context-aware translation",
+          "Translation notes"
+        ],
+        "avg_completion_time": 20,
+        "success_rate": 1.0
+      }
+    ],
+    "status": "offline",
+    "last_seen": "2025-11-07T22:07:46.901367",
+    "total_jobs": 0,
+    "completed_jobs": 0,
+    "failed_jobs": 0,
+    "total_earned": 0.0,
+    "rating": 5.0,
+    "review_count": 0,
+    "created_at": "2025-11-07T18:59:39.362353",
+    "updated_at": "2025-11-07T22:07:46.901367"
+  }
+}
