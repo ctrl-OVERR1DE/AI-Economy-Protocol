@@ -1,0 +1,15 @@
+site_name: AEP Python SDK
+site_description: Python SDK for the AI Economy Protocol (Marketplace + x402)
+site_url: https://ctrl-OVERR1DE.github.io/AI-Economy-Protocol/
+repo_url: https://github.com/ctrl-OVERR1DE/AI-Economy-Protocol
+
+docs_dir: docs
+site_dir: site
+
+nav:
+  - Overview: index.md
+  - API Reference: api.md
+  - Examples: examples.md
+
+theme:
+  name: mkdocs

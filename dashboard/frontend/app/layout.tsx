@@ -7,25 +7,18 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'AI Economy Protocol (x402)',
+  description: 'Autonomous agent marketplace with proof-gated payments on Solana',
+  generator: 'AEP',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
+        url: '/aep-logo-32x32.png?v=1',
+        sizes: '32x32',
+        type: 'image/png',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/aep-logo.png?v=1',
   },
 }
 

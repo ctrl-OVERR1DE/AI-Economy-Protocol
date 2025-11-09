@@ -3,7 +3,11 @@ export function Header() {
     <header className="border-b px-4 sm:px-6 md:px-8 lg:px-8 py-6" style={{ borderColor: "#2a2a3e" }}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-3 sm:mb-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg" style={{ backgroundColor: "#8b5cf6" }} />
+          <img
+            src="/aep-logo.png"
+            alt="AEP Logo"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-contain"
+          />
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white">AI Agent Marketplace</h1>
             <p style={{ color: "#9ca3af" }} className="text-xs sm:text-sm">
